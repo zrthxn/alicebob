@@ -1,5 +1,7 @@
 const express = require('express')
 const readline = require('readline')    
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 const os = require('os')
 const cluster = require('cluster')
 const {spawn, fork} = require('child_process')
@@ -8,6 +10,11 @@ const server = express()
 var command, forks = [], commandProcess, filename
 var aliceIndex, bobIndex
 
+server.use(cookieParser())
+server.use(bodyParser.json())
+server.use(bodyParser.urlencoded({ extended: true }))
+server.use(express.json())
+server.use(express.urlencoded({ extended: true }))
 server.listen(3000, ()=>{
     console.log("Started on PORT 3000")
 })
@@ -28,7 +35,6 @@ server.post('/:from/:to', (req,res)=>{
 
 const interface = readline.createInterface({ input: process.stdin, output: process.stdout })
 interface.on('line', (input) => {
-    console.log('Command')
     let tokens = input.split(' ')
 
     switch(tokens[0]) {
@@ -48,20 +54,29 @@ interface.on('line', (input) => {
                 commandProcess = forks[bobIndex]
             break
 
-        case 'kill': 
+        case 'kill':
             // Killer
             break
+
+        case 'restart':
+            // Restart
+            break
+
         default:
             console.log('Command Not Found')
     }
 
     switch(tokens[1]) {
         case 'init':
-            forks.push(fork(filename))
+            if(forks.length>=2)
+                break
+            commandProcess = fork(filename)
+            forks.push(commandProcess)
             if(command==='alice')
                 aliceIndex = forks.length - 1
             else if(command==='bob')
                 bobIndex = forks.length - 1
+            commandProcess.send({ command: 'init' })
             break
 
         case 'start':
@@ -76,6 +91,6 @@ interface.on('line', (input) => {
             break
 
         default:
-            console.log('Command Not Found')
+            console.log('No Matching Options')
     }
 })

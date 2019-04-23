@@ -16,6 +16,7 @@ process.on('message', (message)=>{
         case 'create':
             bob = crypto.createECDH('sect571r1')
             keys['pub'] = bob.generateKeys()
+            console.log('(bob) :: Created Key')
             break
 
         case 'transmit':
@@ -26,7 +27,7 @@ process.on('message', (message)=>{
                     keyType: 'public'
                 }
             }, ()=>{
-                console.log('(bob) :: Transmitted Key |', keys.pub)
+                console.log('(bob) :: Transmitted Key ')
             })
             break
 

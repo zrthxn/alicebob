@@ -16,17 +16,16 @@ process.on('message', (message)=>{
         case 'create':
             alice = crypto.createECDH('sect571r1')
             keys['pub'] = alice.generateKeys()
+            console.log('(alice) :: Created Key')
             break
 
         case 'transmit':
             request.post('http://127.0.0.1:3000/alice/bob', {
-                body: {
-                    owner: 'alice',
-                    key: keys.pub,
-                    keyType: 'public'
-                }
+                owner: 'alice',
+                key: keys.pub,
+                keyType: 'public'
             }, ()=>{
-                console.log('(alice) :: Transmitted Key |', keys.pub)
+                console.log('(alice) :: Transmitted Key ')
             })
             break
 
