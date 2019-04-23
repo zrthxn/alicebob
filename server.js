@@ -68,8 +68,10 @@ interface.on('line', (input) => {
 
     switch(tokens[1]) {
         case 'init':
-            if(forks.length>=2)
+            if(forks.length>=2) {
+                console.log("Rejected : Enough processes running")
                 break
+            }
             commandProcess = fork(filename)
             forks.push(commandProcess)
             if(command==='alice')
@@ -80,6 +82,18 @@ interface.on('line', (input) => {
             break
 
         case 'start':
+            if(forks.length>=2) {
+                console.log("Rejected : Enough processes running")
+                break
+            }
+            commandProcess = fork(filename)
+            forks.push(commandProcess)
+            if(command==='alice')
+                aliceIndex = forks.length - 1
+            else if(command==='bob')
+                bobIndex = forks.length - 1
+            commandProcess.send({ command: 'init' })
+            commandProcess.send({ command: 'create' })
             break
 
         case 'create':
