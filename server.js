@@ -48,6 +48,9 @@ interface.on('line', (input) => {
                 commandProcess = forks[bobIndex]
             break
 
+        case 'kill': 
+            // Killer
+            break
         default:
             console.log('Command Not Found')
     }

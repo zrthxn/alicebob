@@ -22,7 +22,7 @@ process.on('message', (message)=>{
             request.post('http://127.0.0.1:3000/bob/alice', {
                 body: {
                     owner: 'bob',
-                    key: keys,
+                    key: keys.pub,
                     keyType: 'public'
                 }
             }, ()=>{
