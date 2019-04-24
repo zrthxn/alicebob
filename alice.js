@@ -5,7 +5,13 @@ const os = require('os')
 const cluster = require('cluster')
 const {spawn, fork} = require('child_process')
 
-var alice, keys = {}
+var alice
+var keys = {
+    public: null,
+    secret: null
+}
+
+var algo = 'aes-256-ctr'
 
 process.on('message', (message)=>{
     switch(message.command) {
@@ -14,24 +20,73 @@ process.on('message', (message)=>{
             break
 
         case 'create':
-            alice = crypto.createECDH('sect571r1')
-            keys['pub'] = alice.generateKeys()
-            console.log('(alice) :: Created Key')
+            alice = crypto.createECDH('secp256k1')
+            keys['public'] = alice.generateKeys('hex')
+            console.log('\x1b[32m%s\x1b[0m', '(alice) :: Created Key')
             break
 
         case 'transmit':
-            request.post('http://127.0.0.1:3000/alice/bob', {
-                owner: 'alice',
-                key: keys.pub,
-                keyType: 'public'
-            }, ()=>{
-                console.log('(alice) :: Transmitted Key ')
+            request.post({
+                url: 'http://127.0.0.1:3000/_handshake/alice/bob',
+                json: true,
+                body: {
+                    key: keys.public
+                }
+            }, (error, response, body)=>{
+                console.log('(alice) :: Transmitted Key', body)
             })
             break
 
         case 'secret':
-            keys['pvt'] = alice.computeSecret(message.key)
-            console.log('(alice) :: Computed Secret Key')
+            keys['secret'] = alice.computeSecret(Buffer.from(message.pubkey, 'hex'))
+            console.log('\x1b[32m%s\x1b[0m', '(alice) :: Computed Secret Key')
+            break
+
+        case 'show':
+            if(message.what==='key')
+                console.log('(alice) :: Key', keys.public)
+            else if(message.what==='secret')
+                console.log('(alice) :: Secret', keys.secret)
+            break
+
+        case 'send':
+            var cipher = crypto.createCipher(algo, keys.secret)
+            let encrypted = cipher.update(message.send, 'utf8', 'hex')
+            encrypted += cipher.final('hex')
+            request.post({
+                url: 'http://127.0.0.1:3000/_send/alice/bob',
+                json: true,
+                body: {
+                    msg: encrypted
+                }
+            }, (error, response, body)=>{
+                console.log('(alice) Sent', body)
+            })
+            // ==== Ratcheting ====
+            // keys['public'] = alice.generateKeys('hex')
+            // console.log('\x1b[32m%s\x1b[0m', '(alice) :: Created Key')
+            // request.post({
+            //     url: 'http://127.0.0.1:3000/_handshake/alice/bob',
+            //     json: true,
+            //     body: {
+            //         key: keys.public
+            //     }
+            // }, (error, response, body)=>{
+            //     console.log('(alice) :: Transmitted Key', body)
+            // })
+            break
+
+        case 'recieve':
+            var decipher = crypto.createDecipher(algo, keys.secret)
+            let decrypted = decipher.update(message.recieve, 'hex', 'utf8')
+            decrypted += decipher.final('utf8')
+
+            decrypted = decrypted.split('\\')
+            let _msg = ''
+            for(let i=0;i<decrypted.length;i++)
+                _msg += decrypted[i] + ' '
+
+            console.log('(alice) Bob says: ', _msg)
             break
     }
 })
