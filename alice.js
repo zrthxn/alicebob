@@ -62,18 +62,16 @@ process.on('message', (message)=>{
             }, (error, response, body)=>{
                 console.log('(alice) Sent', body)
             })
+
             // ==== Ratcheting ====
-            // keys['public'] = alice.generateKeys('hex')
-            // console.log('\x1b[32m%s\x1b[0m', '(alice) :: Created Key')
-            // request.post({
-            //     url: 'http://127.0.0.1:3000/_handshake/alice/bob',
-            //     json: true,
-            //     body: {
-            //         key: keys.public
-            //     }
-            // }, (error, response, body)=>{
-            //     console.log('(alice) :: Transmitted Key', body)
-            // })
+            keys['public'] = alice.generateKeys('hex')
+            request.post({
+                url: 'http://127.0.0.1:3000/_handshake/alice/bob',
+                json: true,
+                body: {
+                    key: keys.public
+                }
+            }, (error, response, body)=>{})
             break
 
         case 'recieve':
@@ -87,6 +85,16 @@ process.on('message', (message)=>{
                 _msg += decrypted[i] + ' '
 
             console.log('(alice) Bob says: ', _msg)
+
+            // ==== Ratcheting ====
+            keys['public'] = alice.generateKeys('hex')
+            request.post({
+                url: 'http://127.0.0.1:3000/_handshake/alice/bob',
+                json: true,
+                body: {
+                    key: keys.public
+                }
+            }, (error, response, body)=>{})
             break
     }
 })

@@ -92,7 +92,6 @@ interface.on('line', (input) => {
                 commandProcess.send({ command: 'create' })
                 commandProcess.send({ command: 'transmit' })
             })
-
             break
         
         case 'restart':
